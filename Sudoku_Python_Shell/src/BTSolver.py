@@ -170,18 +170,18 @@ class BTSolver:
                 The LCV is first and the MCV is last
     """
     def getValuesLCVOrder ( self, v ):
-        return self.getValuesInOrder(v)
-##
-##        temp = {}
-##        res = []
-##        for var in self.network.getNeighborsOfVariable(v):
-##            if not var.isAssigned():
-##                temp[var] = var.domain.size()
-##        for (var, len) in sorted(temp.items(),key=lambda x:x[1], reverse = True):
-##            res.append(var)
-##        for i in res:
-##            return i.getValues()
-
+        temp = {}
+        l = []
+        for value in v.domain.values:
+            constraintCount = 0
+            for var in self.network.getNeighborsOfVariable(v):
+                if value in var.getValues():
+                    constraintCount += 1
+                temp[value] =  constraintCount
+        res = sorted(temp.items(), key = lambda x:x[1])
+        for (key, val) in res:
+            l.append(key)
+        return l
     """
          OptionaleTODO: Implement your own advanced Value Heuristic
 
