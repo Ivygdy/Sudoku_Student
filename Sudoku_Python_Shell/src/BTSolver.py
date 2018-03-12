@@ -151,8 +151,18 @@ class BTSolver:
         Return: The unassigned variable with the most unassigned neighbors
     """
     def getDegree ( self ):
-        return None
-
+        localMax = 0
+        varMaxDegree = None
+        for v in self.network.variables:
+            if not v.isAssigned():
+                degreeCount = 0                
+                for n in self.network.getNeighborsOfVariable(v):
+                    if not n.isAssigned():
+                        degreeCount += 1
+                if degreeCount > localMax:
+                    localMax = degreeCount
+                    varMaxDegree = v
+        return varMaxDegree
     """
         Part 2 TODO: Implement the Minimum Remaining Value Heuristic
                        with Degree Heuristic as a Tie Breaker
