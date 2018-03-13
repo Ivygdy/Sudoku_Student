@@ -109,8 +109,26 @@ class BTSolver:
          your program into a tournament.
      """
     def getTournCC ( self ):
-        return None
+       
+        # If a variable is assigned then eliminate that value from the square's neighbors
+        if not self.forwardChecking():
+            return False
 
+        # If a constraint has only one possible place for a value then put the value there.
+
+        for c in self.network.getConstraints(): 
+            n = [0] * self.gameboard.N
+            for i in range(self.gameboard.N):
+                for val in c.vars[i].getValues():
+                    n[val-1] += 1
+            for i in range(self.gameboard.N):
+                if n[i] == 1:
+                    for var in c.vars:
+                        if var.getDomain().contains(i+1):
+                            self.trail.push(var)
+                            var.assignValue(i+1)
+            
+        return self.assignmentsCheck()
     # ==================================================================
     # Variable Selectors
     # ==================================================================
