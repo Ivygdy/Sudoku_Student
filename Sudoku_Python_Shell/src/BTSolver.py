@@ -83,29 +83,25 @@ class BTSolver:
         Return: true is assignment is consistent, false otherwise
     """
     def norvigCheck ( self ):
+        # If a variable is assigned then eliminate that value from the square's neighbors
         if not self.forwardChecking():
             return False
 
-        assigned_v = []
-        for v in self.network.variables:
-            if v.isAssigned:
-                assigned_v.append(v)
+        # If a constraint has only one possible place for a value then put the value there.
 
-        for v in assigned_v:
-            val = v.getValues()
-            for n in self.network.getNeighborsOfVariable(v):
-                if val in n.getValues():
-                    if n.isAssigned():
-                        return False
-                    self.trail.push(n)
-                    n.removeValueFromDomain(val)
-                    
-                            
-        for c in self.network.getModifiedConstraints():
-            if not c.isConsistent():
-                return False
-
-        return True
+        for c in self.network.getConstraints(): 
+            n = [0] * self.gameboard.N
+            for i in range(self.gameboard.N):
+                for val in c.vars[i].getValues():
+                    n[val-1] += 1
+            for i in range(self.gameboard.N):
+                if n[i] == 1:
+                    for var in c.vars:
+                        if var.getDomain().contains(i+1):
+                            self.trail.push(var)
+                            var.assignValue(i+1)
+            
+        return self.assignmentsCheck()
     """
          Optional TODO: Implement your own advanced Constraint Propagation
 
@@ -184,7 +180,7 @@ class BTSolver:
         if len(mrvtie)  == 0:
             return None
         elif len(mrvtie)  == 1:
-            return mrvtie.pop()
+            return mrvtie[0]
         else:
             for v in mrvtie:
                 count = 0
@@ -194,8 +190,7 @@ class BTSolver:
                         order[v] = count
             res = sorted(order.items(), key=lambda x: x[1], reverse=True)
             mrvtie = [k for k,v in res]
-            if len(mrvtie)  > 0:
-                return mrvtie.pop()
+            return mrvtie[0]
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
@@ -204,8 +199,32 @@ class BTSolver:
          your program into a tournament.
      """
     def getTournVar ( self ):
-        return None
 
+        mini = 1000000
+        mrvtie = []
+        order = {}
+        for v in self.network.variables:
+            if not v.isAssigned():
+                if v.domain.size() < mini:
+                    mrvtie.append(v)
+                    mini = v.domain.size()
+                elif v.domain.size() == mini:
+                    mrvtie.append(v)
+        if len(mrvtie)  == 0:
+            return None
+        elif len(mrvtie)  == 1:
+            return mrvtie[0]
+        else:
+            for v in mrvtie:
+                count = 0
+                for n in self.network.getNeighborsOfVariable(v):
+                    if (not n.isAssigned()):
+                        count += 1
+                        order[v] = count
+            res = sorted(order.items(), key=lambda x: x[1], reverse=True)
+            mrvtie = [k for k,v in res]
+
+            return mrvtie[0]
     # ==================================================================
     # Value Selectors
     # ==================================================================
@@ -244,8 +263,18 @@ class BTSolver:
          your program into a tournament.
      """
     def getTournVal ( self, v ):
-        return None
-
+        temp = {}
+        l = []
+        for value in v.domain.values:
+            constraintCount = 0
+            for var in self.network.getNeighborsOfVariable(v):
+                if value in var.getValues():
+                    constraintCount +=1
+            temp[value] = constraintCount
+        res = sorted(temp.items(),key=lambda x:x[1])
+        for (key,val) in res:
+            l.append(key)
+        return l
     # ==================================================================
     # Engine Functions
     # ==================================================================
